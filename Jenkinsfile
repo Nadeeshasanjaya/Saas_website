@@ -29,28 +29,21 @@ pipeline {
       sh 'docker tag $IMAGE_NAME:$IMAGE_TAG $IMAGE_NAME:latest'
       }
     }
-    stage(' Docker hub login'){
-      steps{
+    stage('Docker Hub Login') {
+    steps {
         withCredentials([
-          usernamePassword(
-            credentialsID: 'dockerhub-creds',
-            usernameVariable: 'DOCKER_USER'
-            passwordVariable: 'DOCKER_PASS'
-          )
-        ])
-        {
-          sh ...
-           echo "4DOCKER_PSS" | docker login -u "$DOCKE_USER" --password-stdin
-
-           ...
-
-
+            usernamePassword(
+                credentialsId: 'dockerhub-creds',
+                usernameVariable: 'DOCKER_USER',
+                passwordVariable: 'DOCKER_PASS'
+            )
+        ]) {
+            sh '''
+                echo "$DOCKER_PASS" | docker login -u "$DOCKER_USER" --password-stdin
+            '''
         }
-
-
-      }
-
     }
+}
     stage('push docker image'){
       steps{
 
