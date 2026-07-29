@@ -1,11 +1,11 @@
 pipeline {
 
-    agent {
-        docker {
-            image 'node-docker-agent'
-            args '-v /var/run/docker.sock:/var/run/docker.sock'
-        }
+   agent {
+    docker {
+        image 'node-docker-agent'
+        args '-u root -v /var/run/docker.sock:/var/run/docker.sock'
     }
+}
 
     environment {
         IMAGE_NAME = "nadeesha1/saas-website"
