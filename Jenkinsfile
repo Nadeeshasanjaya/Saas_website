@@ -1,55 +1,55 @@
 pipeline {
 
-    agent any
+    agent {
+        docker {
+            image 'node-docker-agent'
+            args '-v /var/run/docker.sock:/var/run/docker.sock'
+        }
+    }
 
     environment {
         IMAGE_NAME = "nadeesha1/saas-website"
-        IMAGE_TAG  = "latest"
+        IMAGE_TAG = "latest"
     }
 
     stages {
 
-        stage('Checkout') {
-            steps {
-                checkout scm
-            }
-        }
-
         stage('Debug Environment') {
             steps {
                 sh '''
-                    echo "===== PATH ====="
-                    echo $PATH
-
                     echo "===== Node ====="
-                    which node || true
-                    node --version || true
+                    node --version
 
                     echo "===== NPM ====="
-                    which npm || true
-                    npm --version || true
+                    npm --version
 
                     echo "===== Docker ====="
-                    which docker || true
-                    docker --version || true
+                    docker --version
 
-                    echo "===== Docker Socket ====="
-                    ls -l /var/run/docker.sock || true
+                    echo "===== Containers ====="
+                    docker ps
                 '''
             }
         }
 
+
         stage('Install Dependencies') {
             steps {
-                sh 'npm install'
+                sh '''
+                    npm ci
+                '''
             }
         }
 
+
         stage('Build React Application') {
             steps {
-                sh 'npm run build'
+                sh '''
+                    npm run build
+                '''
             }
         }
+
 
         stage('Build Docker Image') {
             steps {
@@ -58,6 +58,7 @@ pipeline {
                 '''
             }
         }
+
 
         stage('Docker Hub Login') {
             steps {
@@ -68,14 +69,18 @@ pipeline {
                         passwordVariable: 'DOCKER_PASS'
                     )
                 ]) {
+
                     sh '''
-                        echo "$DOCKER_PASS" | docker login -u "$DOCKER_USER" --password-stdin
+                        echo "$DOCKER_PASS" | docker login \
+                        -u "$DOCKER_USER" \
+                        --password-stdin
                     '''
                 }
             }
         }
 
-        stage('Push Docker Image') {
+
+        stage('Push Image') {
             steps {
                 sh '''
                     docker push $IMAGE_NAME:$IMAGE_TAG
@@ -83,20 +88,25 @@ pipeline {
             }
         }
 
-        stage('Clean Up') {
+
+        stage('Cleanup') {
             steps {
-                sh 'docker image prune -f'
+                sh '''
+                    docker image prune -f
+                '''
             }
         }
     }
 
+
     post {
+
         success {
-            echo 'Build completed successfully'
+            echo "Pipeline completed successfully"
         }
 
         failure {
-            echo 'Build failed'
+            echo "Pipeline failed"
         }
 
         always {
